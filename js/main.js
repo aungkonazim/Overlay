@@ -43,6 +43,7 @@ var options = {
                 pathnet = [];
                 document.getElementById("route").innerHTML = "";
                 document.getElementById("route1").innerHTML = "";
+                previous_super_peer_array = null;
             }
 
             nodeData.id = String(nodecount);
@@ -63,6 +64,7 @@ var options = {
                 pathnet = [];
                 document.getElementById("route").innerHTML = "";
                 document.getElementById("route1").innerHTML = "";
+                previous_super_peer_array = null;
             }
 
             edgeData.id = String(edgecount);
@@ -103,6 +105,7 @@ function draw(){
         pathnet = [];
         document.getElementById("route").innerHTML = "";
         document.getElementById("route1").innerHTML = "";
+        previous_super_peer_array = null;
     }
 
     nodecount = document.getElementById('num_nodes').value;
@@ -155,7 +158,7 @@ function showrt(){
 
 
 function lightoverlaypath(n1,n2){
-
+    if(pathover.length>1){
     for(var i=0;i<pathover.length-1;i++) {
         var index =overedgedict["str"+pathover[i]+pathover[i+1]+"fin"];
 
@@ -174,6 +177,7 @@ function lightoverlaypath(n1,n2){
             });
 
         }
+    }
     }
 
     pathover =[];
@@ -212,27 +216,27 @@ function showrouteover(){
 }
 
 function lightnetworkpath(n1,n2){
+    if(pathnet.length>1) {
+        for (var i = 0; i < pathnet.length - 1; i++) {
+            var index = netedgedict["str" + pathnet[i] + pathnet[i + 1] + "fin"];
 
-    for(var i=0;i<pathnet.length-1;i++) {
-        var index =netedgedict["str"+pathnet[i]+pathnet[i+1]+"fin"];
+            if (edges._data[index].from == pathnet[i]) {
+                data.edges.update({
+                    id: String(index),
+                    color: '#848484',
+                    arrows: ""
+                });
 
-        if(edges._data[index].from==pathnet[i]){
-            data.edges.update({
-                id:String(index),
-                color:'#848484',
-                arrows: ""
-            });
+            } else {
+                data.edges.update({
+                    id: String(index),
+                    color: '#848484',
+                    arrows: ""
+                });
 
-        }else{
-            data.edges.update({
-                id:String(index),
-                color:'#848484',
-                arrows: ""
-            });
-
+            }
         }
     }
-
 
     pathnet = [];
     document.getElementById("route1").innerHTML = "";
@@ -245,7 +249,7 @@ function lightnetworkpath(n1,n2){
 function showroutenet(){
     for(var i=0;i<pathnet.length-1;i++) {
         var index =netedgedict["str"+pathnet[i]+pathnet[i+1]+"fin"];
-
+        console.log(index);
         if(edges._data[index].from==pathnet[i]){
             data.edges.update({
                 id: String(index),
@@ -266,19 +270,7 @@ function showroutenet(){
 
 
 
-function findedgeindex(edges1,node1,node2){
 
-    for(var i=0;i<edges1.length;i++){
-        var f = edges1._data[i].from;
-        var t = edges1._data[i].to;
-        if((f==node1) && (t==node2)){
-            return i;
-        }
-        if((f==node2) && (t==node1)){
-            return i;
-        }
-    }
-}
 
 function getmap(nodes1,edges1,edgecount)
 {
@@ -327,25 +319,43 @@ function getnetmap(nodes1,edges1,edgecount)
 
 function getoverlay(){
     superpeercount = document.getElementById('num_superpeers').value;
-    overedgedict = {};
-    if (isNumeric(superpeercount) && (superpeercount>0)){
 
-        // for(i in previous_super_peer_array){
-        //     data.nodes.update({
-        //         id: String(previous_super_peer_array[i]),
-        //         group: 'normal'
-        //     });
-        // }
-        //
-        // for(var i=0;i<edges.length;i++){
-        //     data.edges.update({
-        //         id:String(i),
-        //         color:'#848484',
-        //         arrows: ""
-        //     });
-        //
-        // }
+    if (isNumeric(superpeercount) && (superpeercount>0)) {
+        if(previous_super_peer_array != null){
+        for (i in previous_super_peer_array) {
+            data.nodes.update({
+                id: String(previous_super_peer_array[i]),
+                group: 'normal'
+            });
+        }
 
+            if(pathnet.length>1) {
+                for (var i = 0; i < pathnet.length - 1; i++) {
+                    var index = netedgedict["str" + pathnet[i] + pathnet[i + 1] + "fin"];
+
+                    if (edges._data[index].from == pathnet[i]) {
+                        data.edges.update({
+                            id: String(index),
+                            color: '#848484',
+                            arrows: ""
+                        });
+
+                    } else {
+                        data.edges.update({
+                            id: String(index),
+                            color: '#848484',
+                            arrows: ""
+                        });
+
+                    }
+                }
+            }
+    }
+        overedgedict = {};
+        document.getElementById("route").innerHTML = "";
+        document.getElementById("route1").innerHTML = "";
+        pathnet = [];
+        pathover = [];
         var superpeerarray = getsuperpeer();
 
         previous_super_peer_array = superpeerarray;
