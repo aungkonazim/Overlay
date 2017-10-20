@@ -1,330 +1,464 @@
 
 // create an array with nodes
 
-var nodecount = 1;
-var id = [];
-var nodes = [];
-var edges = [];
-// create a network
-var network;
-var key_collection = [];
-var data_node = {};
 
-var options = {layout:{randomSeed:2}};
-id.push(0);
-nodes.push({
-    id: 0,
-    label: String(0)
 
-});
-data_node[id[0]] = {};
+var nodes = null;
+var edges = null;
+var network = null;
+var nodecount = null;
+var edgecount = null;
+var superpeercount = null;
+var data = null;
+var onodes = null;
+var oedges = null;
+var onetwork = null;
+var odata = null;
+var previous_super_peer_array = null;
 
-draw(nodes, edges, options);
-
-function draw(nodes, nodecount, options) {
-    var edges = [];
-    if(nodecount>1){
-        for (var i = 0; i < nodecount; i++) {
-            if (i === (nodecount - 1)) {
-                edges.push({
-                    id: String(id[nodecount-1])+String(id[0]),
-                    from: id[nodecount - 1],
-                    to: id[0],
-                    color: "yellow"
-                });
-            } else {
-                edges.push({
-                    id: String(id[i])+String(id[i+1]),
-                    from: id[i],
-                    to: id[i + 1],
-                    color: "yellow"
-                });
+var options = {
+    physics: false,
+    layout: {randomSeed: 2},
+    groups: {
+        super: {color: {background: 'red'}, borderWidth: 4},
+        normal: {
+            color: {
+                border: '#2B7CE9',
+                background: '#97C2FC'
             }
+        ,
+        borderWidth: 1}},
+    manipulation:{
+        addNode: function(nodeData,callback) {
+            if(onetwork!=null){
+                onetwork.destroy();
+                odata = null;
+                oedges = null;
+                onodes = null;
+            }
+
+            nodeData.id = String(nodecount);
+            nodeData.label = String(nodecount);
+
+            nodecount++;
+            callback(nodeData);
+
+        },
+        deleteNode: true,
+        addEdge: function(edgeData,callback) {
+            if(onetwork!=null){
+                onetwork.destroy();
+                odata = null;
+                oedges = null;
+                onodes = null;
+            }
+
+            edgeData.id = String(edgecount);
+            edgecount++;
+            callback(edgeData);
+
         }
     }
-    var container = document.getElementById('mynetwork');
-    var data = {nodes: nodes, edges: edges};
-    network = new vis.Network(container, data, options);
-    
 
-}
-function draw1(nodes,edges,options){
-    var container = document.getElementById('mynetwork');
-    var data = {nodes: nodes, edges: edges};
-    network = new vis.Network(container, data, options);
-}
+};
+
+var optionsoverlay = {
+    physics: false,
+    layout: {randomSeed: 2},
+    groups: {
+        super: {color: {background: 'red'}, borderWidth: 4},
+        normal: {color: {
+                border: '#2B7CE9',
+                background: '#97C2FC'
+            }
+        ,
+        borderWidth: 1}}
+
+};
 
 
 
-function addnode() {
-    var new_id = Math.floor(Math.random() * 10000);
-    while (id.includes(new_id)) {
-        new_id = Math.floor(Math.random() * 10000);
+
+function draw(){
+    if(onetwork!=null){
+        onetwork.destroy();
+        odata = null;
+        oedges = null;
+        onodes = null;
     }
-    id.push(new_id);
-    id.sort(function(a,b) { return  a-b; });
-    
-    nodecount++;
-    edges = [];
-    nodes.push({
-            id: new_id,
-            label: String(new_id)
+
+    nodecount = document.getElementById('num_nodes').value;
+
+    if (isNumeric(nodecount) && nodecount > 1) {
+
+        finaldraw();
+
+    }else{
+        window.alert("Please Input a proper value > 1");
+    }
+
+}
+
+function finaldraw(){
+    if (network !== null){
+        network.destroy();
+    }
+    data = getnetwork(nodecount);
+    nodecount = data.nodes.length;
+
+    edgecount = data.edges.length;
+    var container = document.getElementById('mynetwork');
+    network = new vis.Network(container, data, options);
+}
+function getoverlayroute(){
+    var from = document.getElementById('from').value;
+    var to = document.getElementById('to').value;
+    if (isNumeric(from) && (from>=0) && (from<nodecount) && isNumeric(to) && (to>=0) && (to<nodecount)){
+        lightoverlaypath(String(from),String(to));
+        lightnetworkpath(String(from),String(to));
+    }else{
+        window.alert("Please Input a proper node ids");
+    }
+
+}
+function lightoverlaypath(n1,n2){
+
+    for(var i=0;i<oedges.length;i++){
+        odata.edges.update({
+           id:String(i),
+           color:'#848484',
+           arrows: ""
         });
-    data_node
-    nodes.sort(function(a,b) { return  a.id-b.id; });   
-    var index = id.indexOf(new_id);
-    console.log(data_node);
-    if (index==nodecount-1){
-    data_node[new_id] = {};
-    }else{
-        data_node[new_id] = {};
-        
-        for (var key in data_node[id[index+1]]){
-            if(key<=new_id){
-                data_node[new_id][key] = data_node[id[index+1]][key];
-                delete data_node[id[index+1]][key];
-            }
+
+    }
+
+    var map = getmap(onodes,oedges._data,oedges.length);
+    var g = new Graph();
+    for(var key in map){
+        g.addVertex(String(key),map[key]);
+    }
+
+    var path = g.shortestPath(n1.toString(), n2.toString()).concat(n1.toString()).reverse();
+
+
+    for(var i=0;i<path.length-1;i++) {
+        var index =findedgeindex(oedges,path[i],path[i+1]);
+
+        if(oedges._data[index].from==path[i]){
+        odata.edges.update({
+            id: String(index),
+            arrows: "to",
+            color: "black"
+        });
+
+        }else{
+            odata.edges.update({
+                id: String(index),
+                arrows: "from",
+                color:"black"
+            });
+
         }
     }
-    console.log(data_node);
-    draw(nodes, nodecount, options);
 
 }
+function lightnetworkpath(n1,n2){
 
-function delnode(){
-    
-    var n_id = document.getElementById('to_delete').value;
-    
-    if (isNumeric(n_id)){
-    var check_pre = 0;
-    for(var i = 0; i <nodecount; i++) {
-        if(id[i] == n_id) {
-           if(i==nodecount-1){
-               for (var key in data_node[id[i]]){
-                   console.log(key);
-//                   delete key in key_collection;
-                   var s = key_collection.indexOf(key);
-                   key_collection.splice(s,1);
-               }
-               delete data_node[id[nodecount-1]];
-           }else{
-               for(var key in data_node[id[i]]){
-                data_node[id[i+1]][key] = data_node[id[i]][key];
-               }
-               delete data_node[id[i]];
-           }  
-           id.splice(i, 1);
-           nodes.splice(i,1);
-           check_pre = 1;
-           break;
+    for(var i=0;i<edges.length;i++){
+        data.edges.update({
+            id:String(i),
+            color:'#848484',
+            arrows: ""
+        });
+
+    }
+
+    var map = getnetmap(data.nodes,edges._data,edges.length);
+    var g1 = new Graph();
+    for(var key in map){
+        g1.addVertex(String(key),map[key]);
+    }
+
+    var path = g1.shortestPath(n1.toString(), n2.toString()).concat(n1.toString()).reverse();
+    console.log(path);
+
+    for(var i=0;i<path.length-1;i++) {
+        var index =findedgeindex(edges,path[i],path[i+1]);
+
+        if(edges._data[index].from==path[i]){
+            data.edges.update({
+                id: String(index),
+                arrows: "to",
+                color: "black"
+            });
+
+        }else{
+            data.edges.update({
+                id: String(index),
+                arrows: "from",
+                color:"black"
+            });
+
         }
     }
-    if (check_pre==1){
-        nodecount--;
-        draw(nodes,nodecount,options);
-    }else{
-        window.alert("The node does not exist");
-    }}else{
-        window.alert("Give a proper id");
-    }
-    
 
-
-} 
-
-
-function insertdata(){
-    
-    var item = document.getElementById('to_insert').value;
-    
-    if(item.length>0){
-            var sum = 0;
-            for (var i = 0; i < item.length; i++) {
-                sum = sum + item.charCodeAt(i);
-            }
-        
-    
-    if(sum <= id[nodecount-1]){
-    if (key_collection.indexOf(sum)===-1){
-        key_collection.push(sum);
-        var f = binarySearch(id,sum);
-        data_node[id[f[1]]][sum] = item;
-        window.alert("Data "+ item + " saved with key = " + sum + " in node= " + id[f[1]]);    
-//        var nodes1 = JSON.parse(JSON.stringify( nodes ));;
-//        
-//         nodes[f[1]].color = 'red';
-//        draw(nodes1,nodecount,options);
-//        
-       draw(nodes,nodecount,options);
-    }else{
-        window.alert("this data already exists");
-        draw(nodes,nodecount,options);
-    }
-    }else{
-        window.alert("what you have entered has a key that exceeds the maximum node id so it can not be stored" + "key = "+ sum + " maximum nodeid = "+ id[nodecount-1]);
-    }
-    }else{
-        window.alert("you have not entered anything");
-    }
-    
-        
-}
-
-function insertkey(){
-    
-    var item = document.getElementById('to_insert_key').value;
-    
-    if(item.length>0){
-            var sum = item;
-            item = "";
-        
-    
-    if(sum <= id[nodecount-1]){
-    if (key_collection.indexOf(sum)===-1){
-        key_collection.push(sum);
-        var f = binarySearch(id,sum);
-        data_node[id[f[1]]][sum] = item;
-        window.alert("Key = " + sum + " saved in node= " + id[f[1]]);    
-//        var nodes1 = JSON.parse(JSON.stringify( nodes ));;
-//        
-//         nodes[f[1]].color = 'red';
-//        draw(nodes1,nodecount,options);
-//        
-       draw(nodes,nodecount,options);
-    }else{
-        window.alert("this key already exists");
-        draw(nodes,nodecount,options);
-    }
-    }else{
-        window.alert("what you have entered has a key that exceeds the maximum node id so it can not be stored" + "key = "+ sum + " maximum nodeid = "+ id[nodecount-1]);
-    }
-    }else{
-        window.alert("you have not entered anything");
-    }
-    
-        
 }
 
 
 
 
-function lookupdata(){
-    var sum = document.getElementById('to_lookup').value;
-    if(sum.length>0){
-        
-        var edges = [];
-        if(nodecount>1){
-            for (var i = 0; i < nodecount; i++) {
-                if (i === (nodecount - 1)) {
-                    edges.push({
-                        id: String(id[nodecount-1])+String(id[0]),
-                        from: id[nodecount - 1],
-                        to: id[0],
-                        
-                    });
-                } else {
-                    edges.push({
-                        id: String(id[i])+String(id[i+1]),
-                        from: id[i],
-                        to: id[i + 1],
-                        
-                    });
+
+function findedgeindex(edges1,node1,node2){
+
+    for(var i=0;i<edges1.length;i++){
+        var f = edges1._data[i].from;
+        var t = edges1._data[i].to;
+        if((f==node1) && (t==node2)){
+            return i;
+        }
+        if((f==node2) && (t==node1)){
+            return i;
+        }
+    }
+}
+
+function getmap(nodes1,edges1,edgecount)
+{
+
+    var graph ={};
+    for(var i =0;i<nodes1.length;i++){
+
+        graph[i] = {};
+
+    }
+
+    for(var i=0;i<edgecount;i++){
+        var f = edges1[i].from;
+        var t = edges1[i].to;
+        graph[f][t]=10;
+        graph[t][f]=10;
+    }
+
+    return graph;
+
+}
+
+function getnetmap(nodes1,edges1,edgecount)
+{
+
+    var graph ={};
+    for(var i =0;i<nodes1.length;i++){
+
+        graph[String(i)] = {};
+
+    }
+    console.log(edges1);
+    for(var i=0;i<edgecount;i++){
+        var f = String(edges1[i].from);
+        var t = String(edges1[i].to);
+
+        graph[f][t]=10;
+        graph[t][f]=10;
+    }
+
+    return graph;
+
+}
+
+
+
+function getoverlay(){
+    superpeercount = document.getElementById('num_superpeers').value;
+
+    if (isNumeric(superpeercount) && (superpeercount>0)){
+
+        for(i in previous_super_peer_array){
+            data.nodes.update({
+                id: String(previous_super_peer_array[i]),
+                group: 'normal'
+            });
+        }
+
+        for(var i=0;i<edges.length;i++){
+            data.edges.update({
+                id:String(i),
+                color:'#848484',
+                arrows: ""
+            });
+
+        }
+        var superpeerarray = getsuperpeer();
+        previous_super_peer_array = superpeerarray;
+
+        odata = getoverlaynodeedge(superpeerarray);
+
+        var container = document.getElementById('mynetworkoverlay');
+        onetwork = new vis.Network(container, odata , optionsoverlay);
+    }else{
+        window.alert("Please Input a proper super peer number");
+    }
+}
+
+function getoverlaynodeedge(superpeerarray){
+    onodes = [];
+    oedges = [];
+    connectionCount = [];
+
+    connection_array = {};
+
+    for (var i = 0;i<superpeerarray.length;i++){
+        connection_array[superpeerarray[i]] = [];
+    }
+    for(var i =0;i<superpeerarray.length;i++) {
+        onodes.push({
+            id: String(superpeerarray[i]),
+            label: String(superpeerarray[i]),
+            group: 'super'
+        });
+
+        data.nodes.update({
+                id: String(superpeerarray[i]),
+                group: 'super'
+        });
+
+    }
+
+    if(superpeerarray.length>1) {
+        for (var i = 0;i<superpeerarray.length;i++){
+            var from = i;
+            while (connection_array[superpeerarray[i]].length < .25*superpeerarray.length){
+
+                var temp = Array.from({length: Math.floor(.25*superpeerarray.length)}, () => Math.floor(Math.random() * superpeerarray.length));
+
+                if (superpeerarray.length === 2) {
+                    temp = [0,1];
+                } else if (superpeerarray.length === 3) {
+                    temp = [0,1,2];
                 }
+                for(var j=0;j<temp.length;j++) {
+                    var to = superpeerarray[temp[j]];
+                    if (!(to in connection_array[superpeerarray[i]]) && (to !== superpeerarray[i])) {
+                        var n =oedges.length;
+                        oedges.push({
+                            id: String(n),
+                            from: superpeerarray[i],
+                            to: to
+                        })
+                        connection_array[superpeerarray[i]].push(to);
+                        connection_array[to].push(superpeerarray[i]);
+                        if(connection_array[superpeerarray[i]].length > .3*superpeerarray.length){
+                            break;
+                        }
+                    }
+                }
+
             }
         }
-        var check = 0;
-        if (data_node[id[0]][sum] != undefined){
-                    document.getElementById('output').innerHTML = "For key = "+sum+" data is found in node = "+ id[0]+" with value = " + data_node[id[0]][sum];
-                    check = 1;
-                    
-        }
-        if(check==0){
-            for (var i = 0; i < nodecount-1; i++){
-                edges[i].color = "red";
-                edges[i].arrows = "to";
-                draw1(nodes,edges,options);
-                if(id[i]<sum && id[i+1]>=sum){
 
-                    if (data_node[id[i+1]][sum] != undefined){
-                        document.getElementById('output').innerHTML = "For key = "+sum+" data is found in node = "+ id[i+1]+" with value = " + data_node[id[i+1]][sum];
-                        check = 1;
-                        break;
-                    }else{
-                        
-                        window.alert("Data does not exist for this key");
-                        check = 1;
+    }
+
+
+
+
+    for (var i = 0; i < nodecount; i++) {
+        if(superpeerarray.indexOf(i) < 0){
+            onodes.push({
+                id: i,
+                label: String(i)
+            });
+            temp_index = Math.floor(Math.random() * superpeerarray.length);
+
+            var from = i;
+            var to = superpeerarray[temp_index];
+            var n = oedges.length;
+            oedges.push({
+                id: String(n),
+                from: from,
+                to: to
+            });
+
+        }
+    }
+    onodes = new vis.DataSet(onodes);
+    oedges = new vis.DataSet(oedges);
+    return {edges:oedges,nodes:onodes};
+
+}
+
+function getsuperpeer() {
+    if(superpeercount>nodecount){
+        superpeercount = nodecount;
+    }
+    var temp = [];
+    while(temp.length < superpeercount){
+        var t = Math.floor(Math.random()*nodecount);
+        if (!temp.includes(t)) {
+            temp.push(t);
+        }
+    }
+
+    return temp;
+}
+
+function getnetwork(nodecount){
+    nodes = [];
+    for(var i=0;i<nodecount;i++){
+        nodes.push({
+            id: String(i),
+            label: String(i)
+        })
+    }
+    var data = getrandomedges(nodes);
+    return data;
+}
+
+function getrandomedges(nodes){
+    edges = [];
+    edgecount = 0;
+    connection_array = {};
+    for (var i = 0;i<nodes.length;i++){
+        connection_array[i] = [];
+    }
+    for (var i = 0;i<nodes.length;i++){
+        var from = i;
+        while (connection_array[i].length < .25*nodes.length){
+
+            var temp = Array.from({length: Math.floor(.25*nodes.length)}, () => Math.floor(Math.random() * nodes.length));
+
+            if (nodes.length === 1) {
+                temp = [0];
+            } else if (nodes.length === 2) {
+                temp = [0, 1];
+            } else if (nodes.length === 3) {
+                temp = [0, 1, 2];
+            }
+            for(var j=0;j<temp.length;j++) {
+                var to = temp[j];
+                if (!(to in connection_array[i]) && (to != i)) {
+                    edges.push({
+                        id: String(edgecount),
+                        from: nodes[i].id,
+                        to: nodes[to].id,
+                    });
+                    edgecount++;
+                    connection_array[i].push(to);
+                    connection_array[to].push(i);
+                    if(connection_array[i].length > .3*nodes.length){
                         break;
                     }
-
-                }            
+                }
+            }
+            if(nodes.length===1){
+                edges = [];
             }
         }
-        if (check==0 && sum <= id[nodecount-1] ){
-            if (data_node[id[nodecount-1]][sum] != undefined){
-                    document.getElementById('output').innerHTML = "For key = "+sum+" data is found in node = "+ id[nodecount-1]+" with value = " + data_node[id[nodecount-1]][sum];
-                    check=1;
-                    }else{
-//                    edges[nodecount-1].color = "red";
-//                    edges[nodecount-1].arrows = "to";
-                   
-                    window.alert("Data does not exist for this key");
-                    
-                }
-        }
-        if(check==0){
-            window.alert("Data does not exist for this key");
-        }
-    
-     
-          
-    }else{
-        window.alert("you have not entered anything");
     }
-    
+    nodes = new vis.DataSet(nodes);
+    edges = new vis.DataSet(edges);
+    return {edges:edges,nodes:nodes};
 }
 
 
 function isNumeric(n) {
-  return !isNaN(parseFloat(n)) && isFinite(n);
+    return !isNaN(parseFloat(n)) && isFinite(n);
 }
-
-
-
-
-function binarySearch(data, val){
-    var highIndex = data.length -1;
-    var lowIndex = 0;
-    var index = 0;
-    var sub = 0;
-    while (highIndex > lowIndex){
-            index = parseInt((highIndex + lowIndex) / 2);
-            sub = data[index];
-            if (data[lowIndex] == val)
-                    return [lowIndex, lowIndex];
-            else if (sub == val)
-                    return [index, index];
-            else if (data[highIndex] == val)
-                    return [highIndex, highIndex];
-            else if (sub > val){
-                    if (highIndex == index){
-                            return [highIndex, lowIndex].sort(function(a,b) { return  a-b; });
-                        }
-                    highIndex = index;
-                }
-            else{
-                    if (lowIndex == index)
-                            return [highIndex, lowIndex].sort(function(a,b) { return  a-b; });
-                    lowIndex = index;
-                }
-    }
-    return [highIndex, lowIndex].sort(function(a,b) { return  a-b; });
-}
-
-
-function sleep(miliseconds) {
-   var currentTime = new Date().getTime();
-
-   while (currentTime + miliseconds >= new Date().getTime()) {
-   }
-}
-

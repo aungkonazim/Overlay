@@ -1,0 +1,99 @@
+
+
+<!doctype html>
+<html>
+<head>
+  <title>Overlay Simulation</title>
+  <script type="text/javascript" src="js/jquery-3.2.1.min.js"></script>
+  <script type="text/javascript" src="js/vis.js"></script>
+  <script type="text/javascript" src="js/dijkstra.js"></script>
+  <script type="text/javascript" src="js/graph.js"></script>
+  <script type="text/javascript" src="js/jikstra.js"></script>
+  <script type="text/javascript" src="js/util.js"></script>
+  <link href="css/vis.css" rel="stylesheet" type="text/css" />
+
+  <style type="text/css">
+    #mynetwork {
+      width: 840px;
+      height: 600px;
+
+    }
+    #mynetworkoverlay {
+      width: 840px;
+      height: 600px;
+
+    }
+    .wrap {
+      width: 100%;
+      overflow:auto;
+    }
+
+    .fleft {
+      float:left;
+      width: 50%;
+      background:lime;
+      height: 700px;
+    }
+
+
+
+    .fright {
+      float: right;
+      background:linen;
+      height: 700px;
+      width: 50%;
+
+    }
+  </style>
+</head>
+<body>
+
+<h2> Once Overlay is created, Route is Shown in Directed Black Edges in both the networks <br>
+</h2>
+
+<div class="wrap">
+  <!--Updated on 10/8/2016; fixed center alignment percentage-->
+  <div class="fleft">
+    <p> Create a Random Network <p>
+    <input id="num_nodes" placeholder="Number of Nodes">
+    <button onclick="draw();">Create</button>
+    <div id="mynetwork"></div>
+
+  </div>
+
+  <div class="fright">
+    <p> Create Overlay </p>
+    <input id="num_superpeers" placeholder="Number of Super Peers">
+    <button onclick="getoverlay();">Create</button>
+    <br>
+    <p> Route From<input id="from" placeholder="NodeId">
+    To <input id="to" placeholder="NodeId">
+    <button onclick="getoverlayroute();">Show Route</button></p>
+    <div id="mynetworkoverlay"></div>
+  </div>
+</div>
+
+
+<p>
+
+</p>
+
+</p>
+
+
+
+    
+<script type="text/javascript" src="js/main.js"></script>
+<!--<button id="add_node" onclick="addnode();">ADD NODE</button> -->
+<!--<button id="del_node" onclick="delnode();" >DELETE NODE</button>-->
+<!--<input id="to_delete"> -->
+<!--<button id="insert_data" onclick="insertdata();" >INSERT DATA</button>-->
+<!--<input id="to_insert" placeholder="insert data here"> -->
+<!--<p></p>-->
+<!--<button id="insert_key" onclick="insertkey();" >INSERT KEY</button>-->
+<!--<input id="to_insert_key" placeholder="insert key here"> -->
+
+<!--<button id="lookup_data" onclick="lookupdata();" >LOOKUP KEY</button>-->
+<!--<input id="to_lookup" > -->
+</body>
+</html>
