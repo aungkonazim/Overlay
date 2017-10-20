@@ -15,6 +15,10 @@ var oedges = null;
 var onetwork = null;
 var odata = null;
 var previous_super_peer_array = null;
+var pathover = [];
+var pathnet = [];
+var netedgedict ={};
+var overedgedict ={};
 
 var options = {
     physics: false,
@@ -35,6 +39,10 @@ var options = {
                 odata = null;
                 oedges = null;
                 onodes = null;
+                pathover =[];
+                pathnet = [];
+                document.getElementById("route").innerHTML = "";
+                document.getElementById("route1").innerHTML = "";
             }
 
             nodeData.id = String(nodecount);
@@ -51,10 +59,16 @@ var options = {
                 odata = null;
                 oedges = null;
                 onodes = null;
+                pathover =[];
+                pathnet = [];
+                document.getElementById("route").innerHTML = "";
+                document.getElementById("route1").innerHTML = "";
             }
 
             edgeData.id = String(edgecount);
             edgecount++;
+            netedgedict["str"+String(edgeData.from)+String(edgeData.to)+"fin"] = edgecount-1;
+            netedgedict["str"+String(edgeData.to)+String(edgeData.from)+"fin"] = edgecount-1;
             callback(edgeData);
 
         }
@@ -64,7 +78,6 @@ var options = {
 
 var optionsoverlay = {
     physics: false,
-    layout: {randomSeed: 2},
     groups: {
         super: {color: {background: 'red'}, borderWidth: 4},
         normal: {color: {
@@ -85,10 +98,15 @@ function draw(){
         odata = null;
         oedges = null;
         onodes = null;
+        overedgedict = {};
+        pathover =[];
+        pathnet = [];
+        document.getElementById("route").innerHTML = "";
+        document.getElementById("route1").innerHTML = "";
     }
 
     nodecount = document.getElementById('num_nodes').value;
-
+    netedgedict = {};
     if (isNumeric(nodecount) && nodecount > 1) {
 
         finaldraw();
@@ -110,46 +128,77 @@ function finaldraw(){
     var container = document.getElementById('mynetwork');
     network = new vis.Network(container, data, options);
 }
-function getoverlayroute(){
+
+
+
+
+function getoverlayroute() {
+
     var from = document.getElementById('from').value;
     var to = document.getElementById('to').value;
-    if (isNumeric(from) && (from>=0) && (from<nodecount) && isNumeric(to) && (to>=0) && (to<nodecount)){
-        lightoverlaypath(String(from),String(to));
-        lightnetworkpath(String(from),String(to));
-    }else{
+    if (isNumeric(from) && (from >= 0) && (from < nodecount) && isNumeric(to) && (to >= 0) && (to < nodecount)) {
+        lightoverlaypath(String(from), String(to));
+        lightnetworkpath(String(from), String(to));
+
+
+    } else {
         window.alert("Please Input a proper node ids");
     }
 
 }
+
+function showrt(){
+    showrouteover();
+    showroutenet();
+}
+
+
+
 function lightoverlaypath(n1,n2){
 
-    for(var i=0;i<oedges.length;i++){
-        odata.edges.update({
-           id:String(i),
-           color:'#848484',
-           arrows: ""
-        });
+    for(var i=0;i<pathover.length-1;i++) {
+        var index =overedgedict["str"+pathover[i]+pathover[i+1]+"fin"];
 
+        if(oedges._data[index].from==pathover[i]){
+            odata.edges.update({
+                id:String(index),
+                color:'#848484',
+                arrows: ""
+            });
+
+        }else{
+            odata.edges.update({
+                id:String(index),
+                color:'#848484',
+                arrows: ""
+            });
+
+        }
     }
 
+    pathover =[];
+    document.getElementById("route").innerHTML = "";
     var map = getmap(onodes,oedges._data,oedges.length);
-    var g = new Graph();
-    for(var key in map){
-        g.addVertex(String(key),map[key]);
-    }
 
-    var path = g.shortestPath(n1.toString(), n2.toString()).concat(n1.toString()).reverse();
+    // for(var key in map){
+    //     g.addVertex(String(key),map[key]);
+    // }
 
+    // var path = g.shortestPath(n1.toString(), n2.toString()).concat(n1.toString()).reverse();
+    pathover = (new Graph(map)).findShortestPath(n1.toString(), n2.toString());
+    document.getElementById("route").innerHTML = "The Path is " + pathover;
 
-    for(var i=0;i<path.length-1;i++) {
-        var index =findedgeindex(oedges,path[i],path[i+1]);
+}
+function showrouteover(){
+    for(var i=0;i<pathover.length-1;i++) {
+        var index =overedgedict["str"+pathover[i]+pathover[i+1]+"fin"];
 
-        if(oedges._data[index].from==path[i]){
-        odata.edges.update({
-            id: String(index),
-            arrows: "to",
-            color: "black"
-        });
+        if(oedges._data[index].from==pathover[i]){
+            odata.edges.update({
+                id: String(index),
+                arrows: "to",
+                color: "black"
+            });
 
         }else{
             odata.edges.update({
@@ -160,32 +209,44 @@ function lightoverlaypath(n1,n2){
 
         }
     }
-
 }
+
 function lightnetworkpath(n1,n2){
 
-    for(var i=0;i<edges.length;i++){
-        data.edges.update({
-            id:String(i),
-            color:'#848484',
-            arrows: ""
-        });
+    for(var i=0;i<pathnet.length-1;i++) {
+        var index =netedgedict["str"+pathnet[i]+pathnet[i+1]+"fin"];
 
+        if(edges._data[index].from==pathnet[i]){
+            data.edges.update({
+                id:String(index),
+                color:'#848484',
+                arrows: ""
+            });
+
+        }else{
+            data.edges.update({
+                id:String(index),
+                color:'#848484',
+                arrows: ""
+            });
+
+        }
     }
 
+
+    pathnet = [];
+    document.getElementById("route1").innerHTML = "";
     var map = getnetmap(data.nodes,edges._data,edges.length);
-    var g1 = new Graph();
-    for(var key in map){
-        g1.addVertex(String(key),map[key]);
-    }
+    pathnet = (new Graph(map)).findShortestPath(n1.toString(), n2.toString())
+    document.getElementById("route1").innerHTML = "The Path is " + pathnet;
 
-    var path = g1.shortestPath(n1.toString(), n2.toString()).concat(n1.toString()).reverse();
-    console.log(path);
+}
 
-    for(var i=0;i<path.length-1;i++) {
-        var index =findedgeindex(edges,path[i],path[i+1]);
+function showroutenet(){
+    for(var i=0;i<pathnet.length-1;i++) {
+        var index =netedgedict["str"+pathnet[i]+pathnet[i+1]+"fin"];
 
-        if(edges._data[index].from==path[i]){
+        if(edges._data[index].from==pathnet[i]){
             data.edges.update({
                 id: String(index),
                 arrows: "to",
@@ -201,10 +262,7 @@ function lightnetworkpath(n1,n2){
 
         }
     }
-
 }
-
-
 
 
 
@@ -252,7 +310,7 @@ function getnetmap(nodes1,edges1,edgecount)
         graph[String(i)] = {};
 
     }
-    console.log(edges1);
+
     for(var i=0;i<edgecount;i++){
         var f = String(edges1[i].from);
         var t = String(edges1[i].to);
@@ -269,25 +327,27 @@ function getnetmap(nodes1,edges1,edgecount)
 
 function getoverlay(){
     superpeercount = document.getElementById('num_superpeers').value;
-
+    overedgedict = {};
     if (isNumeric(superpeercount) && (superpeercount>0)){
 
-        for(i in previous_super_peer_array){
-            data.nodes.update({
-                id: String(previous_super_peer_array[i]),
-                group: 'normal'
-            });
-        }
+        // for(i in previous_super_peer_array){
+        //     data.nodes.update({
+        //         id: String(previous_super_peer_array[i]),
+        //         group: 'normal'
+        //     });
+        // }
+        //
+        // for(var i=0;i<edges.length;i++){
+        //     data.edges.update({
+        //         id:String(i),
+        //         color:'#848484',
+        //         arrows: ""
+        //     });
+        //
+        // }
 
-        for(var i=0;i<edges.length;i++){
-            data.edges.update({
-                id:String(i),
-                color:'#848484',
-                arrows: ""
-            });
-
-        }
         var superpeerarray = getsuperpeer();
+
         previous_super_peer_array = superpeerarray;
 
         odata = getoverlaynodeedge(superpeerarray);
@@ -323,11 +383,11 @@ function getoverlaynodeedge(superpeerarray){
 
     }
 
+
     if(superpeerarray.length>1) {
         for (var i = 0;i<superpeerarray.length;i++){
             var from = i;
             while (connection_array[superpeerarray[i]].length < .25*superpeerarray.length){
-
                 var temp = Array.from({length: Math.floor(.25*superpeerarray.length)}, () => Math.floor(Math.random() * superpeerarray.length));
 
                 if (superpeerarray.length === 2) {
@@ -343,7 +403,9 @@ function getoverlaynodeedge(superpeerarray){
                             id: String(n),
                             from: superpeerarray[i],
                             to: to
-                        })
+                        });
+                        overedgedict["str"+String(superpeerarray[i])+String(to)+"fin"] = n;
+                        overedgedict["str"+String(to)+String(superpeerarray[i])+"fin"] = n;
                         connection_array[superpeerarray[i]].push(to);
                         connection_array[to].push(superpeerarray[i]);
                         if(connection_array[superpeerarray[i]].length > .3*superpeerarray.length){
@@ -376,6 +438,9 @@ function getoverlaynodeedge(superpeerarray){
                 from: from,
                 to: to
             });
+
+            overedgedict["str"+String(from)+String(to)+"fin"] = n;
+            overedgedict["str"+String(to)+String(from)+"fin"] = n;
 
         }
     }
@@ -441,6 +506,8 @@ function getrandomedges(nodes){
                         to: nodes[to].id,
                     });
                     edgecount++;
+                    netedgedict["str"+String(nodes[i].id)+String(nodes[to].id)+"fin"] = edgecount-1;
+                    netedgedict["str"+String(nodes[to].id)+String(nodes[i].id)+"fin"] = edgecount-1;
                     connection_array[i].push(to);
                     connection_array[to].push(i);
                     if(connection_array[i].length > .3*nodes.length){
@@ -462,3 +529,149 @@ function getrandomedges(nodes){
 function isNumeric(n) {
     return !isNaN(parseFloat(n)) && isFinite(n);
 }
+
+
+var Graph = (function (undefined) {
+
+    var extractKeys = function (obj) {
+        var keys = [], key;
+        for (key in obj) {
+            Object.prototype.hasOwnProperty.call(obj,key) && keys.push(key);
+        }
+        return keys;
+    }
+
+    var sorter = function (a, b) {
+        return parseFloat (a) - parseFloat (b);
+    }
+
+    var findPaths = function (map, start, end, infinity) {
+        infinity = infinity || Infinity;
+
+        var costs = {},
+            open = {'0': [start]},
+            predecessors = {},
+            keys;
+
+        var addToOpen = function (cost, vertex) {
+            var key = "" + cost;
+            if (!open[key]) open[key] = [];
+            open[key].push(vertex);
+        }
+
+        costs[start] = 0;
+
+        while (open) {
+            if(!(keys = extractKeys(open)).length) break;
+
+            keys.sort(sorter);
+
+            var key = keys[0],
+                bucket = open[key],
+                node = bucket.shift(),
+                currentCost = parseFloat(key),
+                adjacentNodes = map[node] || {};
+
+            if (!bucket.length) delete open[key];
+
+            for (var vertex in adjacentNodes) {
+                if (Object.prototype.hasOwnProperty.call(adjacentNodes, vertex)) {
+                    var cost = adjacentNodes[vertex],
+                        totalCost = cost + currentCost,
+                        vertexCost = costs[vertex];
+
+                    if ((vertexCost === undefined) || (vertexCost > totalCost)) {
+                        costs[vertex] = totalCost;
+                        addToOpen(totalCost, vertex);
+                        predecessors[vertex] = node;
+                    }
+                }
+            }
+        }
+
+        if (costs[end] === undefined) {
+            return null;
+        } else {
+            return predecessors;
+        }
+
+    }
+
+    var extractShortest = function (predecessors, end) {
+        var nodes = [],
+            u = end;
+
+        while (u !== undefined) {
+            nodes.push(u);
+            u = predecessors[u];
+        }
+
+        nodes.reverse();
+        return nodes;
+    }
+
+    var findShortestPath = function (map, nodes) {
+        var start = nodes.shift(),
+            end,
+            predecessors,
+            path = [],
+            shortest;
+
+        while (nodes.length) {
+            end = nodes.shift();
+            predecessors = findPaths(map, start, end);
+
+            if (predecessors) {
+                shortest = extractShortest(predecessors, end);
+                if (nodes.length) {
+                    path.push.apply(path, shortest.slice(0, -1));
+                } else {
+                    return path.concat(shortest);
+                }
+            } else {
+                return null;
+            }
+
+            start = end;
+        }
+    }
+
+    var toArray = function (list, offset) {
+        try {
+            return Array.prototype.slice.call(list, offset);
+        } catch (e) {
+            var a = [];
+            for (var i = offset || 0, l = list.length; i < l; ++i) {
+                a.push(list[i]);
+            }
+            return a;
+        }
+    }
+
+    var Graph = function (map) {
+        this.map = map;
+    }
+
+    Graph.prototype.findShortestPath = function (start, end) {
+        if (Object.prototype.toString.call(start) === '[object Array]') {
+            return findShortestPath(this.map, start);
+        } else if (arguments.length === 2) {
+            return findShortestPath(this.map, [start, end]);
+        } else {
+            return findShortestPath(this.map, toArray(arguments));
+        }
+    }
+
+    Graph.findShortestPath = function (map, start, end) {
+        if (Object.prototype.toString.call(start) === '[object Array]') {
+            return findShortestPath(map, start);
+        } else if (arguments.length === 3) {
+            return findShortestPath(map, [start, end]);
+        } else {
+            return findShortestPath(map, toArray(arguments, 1));
+        }
+    }
+
+    return Graph;
+
+})();

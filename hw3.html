@@ -6,10 +6,8 @@
   <title>Overlay Simulation</title>
   <script type="text/javascript" src="js/jquery-3.2.1.min.js"></script>
   <script type="text/javascript" src="js/vis.js"></script>
-  <script type="text/javascript" src="js/dijkstra.js"></script>
   <script type="text/javascript" src="js/graph.js"></script>
-  <script type="text/javascript" src="js/jikstra.js"></script>
-  <script type="text/javascript" src="js/util.js"></script>
+
   <link href="css/vis.css" rel="stylesheet" type="text/css" />
 
   <style type="text/css">
@@ -57,6 +55,7 @@
     <p> Create a Random Network <p>
     <input id="num_nodes" placeholder="Number of Nodes">
     <button onclick="draw();">Create</button>
+    <h3 id="route1"></h3>
     <div id="mynetwork"></div>
 
   </div>
@@ -68,7 +67,9 @@
     <br>
     <p> Route From<input id="from" placeholder="NodeId">
     To <input id="to" placeholder="NodeId">
-    <button onclick="getoverlayroute();">Show Route</button></p>
+      <button onclick="getoverlayroute();">Compute Route</button></p>
+    <h3 id="route"></h3>
+    <button onclick="showrt();">Show Route</button></p>
     <div id="mynetworkoverlay"></div>
   </div>
 </div>
